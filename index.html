@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Meta Tag PWA per iOS e Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CCTV Lab">
+    <meta name="theme-color" content="#050505">
+    
+    <!-- PWA Manifest e Icona per iOS -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    
+    <title>BASTA ASCOLTARE - CCTV LAB</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #e5e5e5;
+            overscroll-behavior: none;
+        }
+        
+        .hacker-font {
+            font-family: 'Courier Prime', monospace;
+        }
+        
+        .neon-text {
+            color: #33FF33;
+            text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+        }
+        
+        .input-dark {
+            background-color: #111;
+            border: 1px solid #333;
+            color: #33FF33;
+            transition: all 0.3s ease;
+        }
+        
+        .input-dark:focus {
+            outline: none;
+            border-color: #33FF33;
+            box-shadow: 0 0 8px rgba(51, 255, 51, 0.4);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #33FF33; border-radius: 4px; }
+        
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: #33FF33;
+            width: 18px;
+            height: 18px;
+        }
+        
+        #progress-fill {
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased pb-32">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50 bg-[#0a0a0a] border-b border-[#33FF33] px-4 py-3 flex justify-between items-center shadow-[0_4px_15px_rgba(51,255,51,0.1)]">
+        <div>
+            <h1 class="text-lg md:text-xl font-bold neon-text hacker-font tracking-tight">BASTA ASCOLTARE</h1>
+            <p class="text-[10px] text-gray-400">CCTV VIDEO LAB v1.0 Mobile</p>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 w-full max-w-3xl mx-auto p-4 space-y-6">
+        
+        <!-- GRID CONFIG -->
+        <section class="bg-[#0f0f0f] border border-gray-800 rounded-lg p-4">
+            <h2 class="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-800 pb-2">GRIGLIA TELECAMERE</h2>
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-1">Seleziona Layout</label>
+                <select id="grid-select" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    <option value="1">1 Camera (Schermo Intero)</option>
+                    <option value="4">4 Camere (2x2)</option>
+                    <option value="9">9 Camere (3x3)</option>
+                </select>
+            </div>
+            <div id="cam-rows-container" class="space-y-3"></div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="bg-[#0f0f0f] border border-gray-800 rounded-lg p-4">
+            <h2 class="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-800 pb-2">IMPOSTAZIONI BASE</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nome Luogo (Opzionale)</label>
+                    <input type="text" id="setting-location" class="w-full input-dark rounded p-2 text-sm hacker-font" placeholder="Es. LABORATORIO 4">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Watermark (max 30 car.)</label>
+                    <input type="text" id="setting-watermark" maxlength="30" class="w-full input-dark rounded p-2 text-sm hacker-font" placeholder="Firma invisibile">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Data</label>
+                        <input type="date" id="setting-date" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Ora</label>
+                        <input type="time" id="setting-time" step="1" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Durata (sec, max 60)</label>
+                        <input type="number" id="setting-duration" min="1" max="60" value="20" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">FPS</label>
+                        <input type="number" id="setting-fps" min="1" max="60" value="25" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLOR MODES & GLITCHES -->
+        <section class="bg-[#0f0f0f] border border-gray-800 rounded-lg p-4">
+            <h2 class="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-800 pb-2">STILE E DISTORSIONI</h2>
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-2">Filtro Cromatico</label>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <label class="flex items-center space-x-2"><input type="radio" name="colormode" value="green" checked> <span>Fosfori Verdi</span></label>
+                    <label class="flex items-center space-x-2"><input type="radio" name="colormode" value="bw"> <span>Bianco e Nero</span></label>
+                    <label class="flex items-center space-x-2"><input type="radio" name="colormode" value="muted"> <span>Toni Smorzati</span></label>
+                    <label class="flex items-center space-x-2"><input type="radio" name="colormode" value="true"> <span>True Color</span></label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-2">Risoluzione Output</label>
+                <select id="setting-resolution" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    <option value="1280x720">1280x720 (HD - Bilanciato)</option>
+                    <option value="854x480" selected>854x480 (SD - Web/Mobile)</option>
+                    <option value="640x360">640x360 (Bassa - Anteprima rapida)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-gray-400 mb-2">Glitch VHS</label>
+                <div class="space-y-2 text-sm">
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="glitch-track" checked> <span>Errore tracciamento (Salti)</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="glitch-chroma" checked> <span>Aberrazione Cromatica</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="glitch-noise" checked> <span>Rumore Statico</span></label>
+                </div>
+            </div>
+        </section>
+
+        <!-- SAINT GILLES -->
+        <section class="bg-[#0f0f0f] border border-gray-800 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
+                <h2 class="text-sm font-semibold text-gray-300">OVERLAY SAINT GILLES</h2>
+                <label class="flex items-center space-x-2 text-sm neon-text font-bold">
+                    <input type="checkbox" id="sg-enable"> <span>ATTIVA</span>
+                </label>
+            </div>
+            
+            <div id="sg-settings" class="space-y-4 opacity-50 pointer-events-none transition-opacity">
+                <div>
+                    <label class="block text-xs text-[#33FF33] mb-1 hacker-font">>_ TESTO</label>
+                    <textarea id="sg-text" rows="3" class="w-full input-dark rounded p-2 text-sm hacker-font" placeholder="Cosa deve dire?"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Inizio (sec)</label>
+                        <input type="number" id="sg-start" min="0" value="0" step="0.5" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Durata (sec, vuoto=fine)</label>
+                        <input type="number" id="sg-duration" min="0.5" step="0.5" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                </div>
+                
+                <div class="space-y-2 text-sm">
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="sg-blink" checked> <span>Testo Lampeggiante</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="sg-randompos"> <span>Posizione in Movimento</span></label>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 items-end">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Intervallo Salto (0.5-10s)</label>
+                        <input type="number" id="sg-interval" min="0.5" max="10" value="4.0" step="0.5" class="w-full input-dark rounded p-2 text-sm hacker-font">
+                    </div>
+                    <div>
+                        <label class="flex items-center space-x-2 text-sm pb-2"><input type="checkbox" id="sg-randomtime"> <span>Tempi Casuali</span></label>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FIXED BOTTOM BAR -->
+    <div class="fixed bottom-0 left-0 w-full bg-[#0a0a0a] border-t border-[#33FF33] p-4 z-50 shadow-[0_-4px_15px_rgba(51,255,51,0.15)]">
+        <div class="max-w-3xl mx-auto">
+            <label class="flex items-start space-x-2 mb-3 cursor-pointer">
+                <input type="checkbox" id="disclaimer-check" class="mt-0.5">
+                <span class="text-[10px] text-gray-400 leading-tight">Dichiaro di possedere i diritti per i file inseriti e mi assumo la responsabilità dell'utilizzo.</span>
+            </label>
+            
+            <div id="progress-container" class="hidden w-full bg-gray-800 rounded-full h-2 mb-3 overflow-hidden">
+                <div id="progress-fill" class="bg-[#33FF33] h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="status-text" class="text-xs text-center text-gray-400 mb-2 hidden hacker-font">Rendering in corso...</p>
+
+            <div class="flex space-x-3">
+                <button id="btn-cancel" class="hidden flex-1 bg-red-900 hover:bg-red-800 text-red-100 font-bold py-3 rounded-lg transition-colors text-sm">
+                    ANNULLA
+                </button>
+                <button id="btn-create" disabled class="flex-1 bg-[#1a1a1a] text-gray-500 font-bold py-3 rounded-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700">
+                    CREA VIDEO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden elements for rendering -->
+    <canvas id="render-canvas" class="hidden"></canvas>
+    <div id="media-pool" class="hidden"></div>
+
+    <script>
+        // --- UI STATE & LOGIC ---
+        const UI = {
+            gridSelect: document.getElementById('grid-select'),
+            rowsContainer: document.getElementById('cam-rows-container'),
+            disclaimerCheck: document.getElementById('disclaimer-check'),
+            btnCreate: document.getElementById('btn-create'),
+            btnCancel: document.getElementById('btn-cancel'),
+            sgEnable: document.getElementById('sg-enable'),
+            sgSettings: document.getElementById('sg-settings'),
+            progressContainer: document.getElementById('progress-container'),
+            progressFill: document.getElementById('progress-fill'),
+            statusText: document.getElementById('status-text'),
+            
+            loc: document.getElementById('setting-location'),
+            date: document.getElementById('setting-date'),
+            time: document.getElementById('setting-time'),
+            duration: document.getElementById('setting-duration'),
+            fps: document.getElementById('setting-fps'),
+            wm: document.getElementById('setting-watermark'),
+            resolution: document.getElementById('setting-resolution'),
+            
+            sgText: document.getElementById('sg-text'),
+            sgStart: document.getElementById('sg-start'),
+            sgDuration: document.getElementById('sg-duration'),
+            sgBlink: document.getElementById('sg-blink'),
+            sgRandomPos: document.getElementById('sg-randompos'),
+            sgInterval: document.getElementById('sg-interval'),
+            sgRandomTime: document.getElementById('sg-randomtime'),
+            
+            gTrack: document.getElementById('glitch-track'),
+            gChroma: document.getElementById('glitch-chroma'),
+            gNoise: document.getElementById('glitch-noise')
+        };
+
+        let mediaFiles = []; 
+        let isRecording = false;
+        let isCancelled = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let animationFrameId = null;
+
+        // Init DateTime
+        const now = new Date();
+        UI.date.value = now.toISOString().split('T')[0];
+        UI.time.value = now.toTimeString().split(' ')[0];
+
+        // Disclaimer logic
+        UI.disclaimerCheck.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                UI.btnCreate.removeAttribute('disabled');
+                UI.btnCreate.className = "flex-1 bg-[#33FF33] text-black font-bold py-3 rounded-lg transition-all text-sm shadow-[0_0_15px_rgba(51,255,51,0.4)]";
+            } else {
+                UI.btnCreate.setAttribute('disabled', 'true');
+                UI.btnCreate.className = "flex-1 bg-[#1a1a1a] text-gray-500 font-bold py-3 rounded-lg transition-all text-sm border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed";
+            }
+        });
+
+        // SG logic
+        UI.sgEnable.addEventListener('change', (e) => {
+            if (e.target.checked) UI.sgSettings.classList.remove('opacity-50', 'pointer-events-none');
+            else UI.sgSettings.classList.add('opacity-50', 'pointer-events-none');
+        });
+
+        // Grid Input Generator
+        function generateRows() {
+            const count = parseInt(UI.gridSelect.value);
+            UI.rowsContainer.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const div = document.createElement('div');
+                div.className = 'flex flex-col sm:flex-row gap-2 bg-[#1a1a1a] p-2 rounded border border-gray-800';
+                div.innerHTML = `
+                    <input type="text" id="cam-name-${i}" value="CAM ${i+1}" class="input-dark text-xs p-2 rounded w-full sm:w-1/3 hacker-font" placeholder="Nome Cam">
+                    <input type="file" id="cam-file-${i}" accept="video/*, image/*" class="text-xs text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#33FF33] file:text-black w-full cursor-pointer">
+                `;
+                UI.rowsContainer.appendChild(div);
+            }
+        }
+        UI.gridSelect.addEventListener('change', generateRows);
+        generateRows(); 
+
+        // Canvas Setup
+        const canvas = document.getElementById('render-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const mediaPool = document.getElementById('media-pool');
+
+        // Pre-generate Noise Canvas
+        const noiseCanvas = document.createElement('canvas');
+        noiseCanvas.width = 300; noiseCanvas.height = 300;
+        const noiseCtx = noiseCanvas.getContext('2d');
+        function updateNoise() {
+            const idata = noiseCtx.createImageData(300, 300);
+            const buf32 = new Uint32Array(idata.data.buffer);
+            for(let i=0; i<buf32.length; i++) buf32[i] = Math.random() < 0.5 ? 0xff000000 : 0xffffffff;
+            noiseCtx.putImageData(idata, 0, 0);
+        }
+
+        // Processing Logic
+        async function startCreation() {
+            let durationSec = parseFloat(UI.duration.value) || 20;
+            if (durationSec > 60) durationSec = 60;
+            const fps = parseInt(UI.fps.value) || 25;
+
+            // Validate SG timing
+            if (UI.sgEnable.checked) {
+                const sgStart = parseFloat(UI.sgStart.value) || 0;
+                if (sgStart >= durationSec) {
+                    alert(`Errore: Il video dura ${durationSec}s, ma Saint Gilles appare a ${sgStart}s. \nCorregere i tempi per procedere.`);
+                    return;
+                }
+                const sgText = UI.sgText.value.trim();
+                if (!sgText) {
+                    alert("Errore: Testo Saint Gilles vuoto.");
+                    return;
+                }
+                const jInterval = parseFloat(UI.sgInterval.value);
+                if (jInterval < 0.5 || jInterval > 10.0 || isNaN(jInterval)) {
+                    alert("Errore: L'intervallo di salto deve essere compreso tra 0.5 e 10 secondi.");
+                    return;
+                }
+            }
+
+            const slots = parseInt(UI.gridSelect.value);
+            mediaFiles = [];
+            let hasMedia = false;
+            mediaPool.innerHTML = '';
+
+            // Setup resolution
+            const [rW, rH] = UI.resolution.value.split('x').map(Number);
+            canvas.width = rW;
+            canvas.height = rH;
+
+            for (let i = 0; i < slots; i++) {
+                const fileInput = document.getElementById(`cam-file-${i}`);
+                const nameInput = document.getElementById(`cam-name-${i}`);
+                if (fileInput.files && fileInput.files[0]) {
+                    hasMedia = true;
+                    const file = fileInput.files[0];
+                    const url = URL.createObjectURL(file);
+                    let mediaObj = { name: nameInput.value.trim() || `CAM ${i+1}`, active: true };
+                    
+                    if (file.type.startsWith('video/')) {
+                        const vid = document.createElement('video');
+                        vid.src = url;
+                        vid.muted = true;
+                        vid.loop = true;
+                        vid.crossOrigin = "anonymous";
+                        vid.setAttribute('playsinline', '');
+                        mediaPool.appendChild(vid);
+                        mediaObj.type = 'video';
+                        mediaObj.el = vid;
+                        await new Promise(res => {
+                            vid.onloadeddata = () => vid.play().then(res).catch(res);
+                            vid.onerror = res;
+                        });
+                    } else if (file.type.startsWith('image/')) {
+                        const img = new Image();
+                        img.src = url;
+                        img.crossOrigin = "anonymous";
+                        mediaObj.type = 'image';
+                        mediaObj.el = img;
+                        await new Promise(res => { img.onload = res; img.onerror = res; });
+                    }
+                    mediaFiles[i] = mediaObj;
+                } else {
+                    mediaFiles[i] = { name: nameInput.value.trim() || `CAM ${i+1}`, active: false };
+                }
+            }
+
+            if (!hasMedia) {
+                alert("Seleziona almeno un file video o immagine!");
+                return;
+            }
+
+            // Lock UI
+            isRecording = true;
+            isCancelled = false;
+            UI.btnCreate.classList.add('hidden');
+            UI.btnCancel.classList.remove('hidden');
+            UI.progressContainer.classList.remove('hidden');
+            UI.statusText.classList.remove('hidden');
+            UI.progressFill.style.width = '0%';
+            
+            startRenderLoop(slots, durationSec, fps);
+        }
+
+        function startRenderLoop(slots, durationSec, fps) {
+            const totalFrames = durationSec * fps;
+            let currentFrame = 0;
+            const startTimeStamp = new Date(`${UI.date.value}T${UI.time.value}`).getTime();
+            
+            const cols = slots === 9 ? 3 : (slots === 4 ? 2 : 1);
+            const rows = cols;
+            const cellW = canvas.width / cols;
+            const cellH = canvas.height / rows;
+
+            const colorMode = document.querySelector('input[name="colormode"]:checked').value;
+            const loc = UI.loc.value.trim();
+            const wm = UI.wm.value.trim();
+            
+            let sgConfig = null;
+            if (UI.sgEnable.checked) {
+                sgConfig = {
+                    text: ">SaintGilles15_40\n> " + UI.sgText.value.replace(/\n/g, '\n> '),
+                    startF: (parseFloat(UI.sgStart.value) || 0) * fps,
+                    durF: UI.sgDuration.value ? (parseFloat(UI.sgDuration.value) * fps) : Infinity,
+                    blink: UI.sgBlink.checked,
+                    randomPos: UI.sgRandomPos.checked,
+                    intervalF: (parseFloat(UI.sgInterval.value) || 4.0) * fps,
+                    randomTime: UI.sgRandomTime.checked,
+                    nextJumpF: 0, x: 0, y: 0
+                };
+            }
+
+            let mimeType = 'video/webm';
+            const stream = canvas.captureStream(fps);
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            recordedChunks = [];
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = () => { if (!isCancelled) exportVideo(); };
+            mediaRecorder.start();
+
+            const frameInterval = 1000 / fps;
+            let lastDrawTime = performance.now();
+
+            function renderLoop(time) {
+                if (isCancelled || currentFrame >= totalFrames) {
+                    mediaRecorder.stop();
+                    return;
+                }
+
+                const elapsed = time - lastDrawTime;
+                if (elapsed > frameInterval) {
+                    lastDrawTime = time - (elapsed % frameInterval);
+
+                    const curDate = new Date(startTimeStamp + (currentFrame / fps) * 1000);
+                    const curTimeStr = curDate.toISOString().replace('T', ' ').substring(0, 19);
+
+                    // 1. Draw Grid
+                    ctx.save();
+                    for (let i = 0; i < slots; i++) {
+                        const r = Math.floor(i / cols);
+                        const c = i % cols;
+                        const x = c * cellW, y = r * cellH;
+                        const m = mediaFiles[i];
+
+                        if (m && m.active && m.el) {
+                            const elW = m.el.videoWidth || m.el.width;
+                            const elH = m.el.videoHeight || m.el.height;
+                            const scale = Math.max(cellW / elW, cellH / elH);
+                            const drawW = elW * scale, drawH = elH * scale;
+                            ctx.drawImage(m.el, x + (cellW - drawW) / 2, y + (cellH - drawH) / 2, drawW, drawH);
+                        } else {
+                            ctx.fillStyle = '#0a0a0a';
+                            ctx.fillRect(x, y, cellW, cellH);
+                            ctx.fillStyle = colorMode === 'green' ? '#64f096' : '#dcdcdc';
+                            ctx.font = `bold ${Math.max(14, cellH*0.1)}px 'Inter', sans-serif`;
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText("NO SIGNAL", x + cellW/2, y + cellH/2);
+                        }
+                        
+                        // Texts
+                        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                        ctx.fillStyle = colorMode === 'green' ? '#b4ffd2' : '#e6e6e6';
+                        ctx.font = `bold ${Math.max(12, cellH*0.06)}px 'Inter', sans-serif`;
+                        ctx.fillText((m ? m.name : `CAM ${i+1}`).toUpperCase(), x + 15, y + 15);
+                        ctx.textAlign = 'right';
+                        ctx.font = `${Math.max(10, cellH*0.05)}px 'Inter', sans-serif`;
+                        ctx.fillText(curTimeStr, x + cellW - 15, y + 15);
+                    }
+                    ctx.restore();
+
+                    // 2. Color Filter
+                    ctx.save();
+                    if (colorMode === 'green') {
+                        ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#4cf04c'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                        ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(0,50,0,0.4)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    } else if (colorMode === 'bw') {
+                        ctx.globalCompositeOperation = 'color'; ctx.fillStyle = 'black'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    } else if (colorMode === 'muted') {
+                        ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(128,128,128,0.5)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    }
+                    ctx.restore();
+
+                    // 3. Grid Lines
+                    ctx.strokeStyle = colorMode === 'green' ? 'rgba(150,210,180,0.5)' : 'rgba(160,160,160,0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    for(let c=1; c<cols; c++) { ctx.moveTo(c*cellW, 0); ctx.lineTo(c*cellW, canvas.height); }
+                    for(let r=1; r<rows; r++) { ctx.moveTo(0, r*cellH); ctx.lineTo(canvas.width, r*cellH); }
+                    ctx.stroke();
+
+                    // 4. Global Text
+                    ctx.fillStyle = colorMode === 'green' ? '#64f096' : '#dcdcdc';
+                    ctx.font = `bold ${Math.max(12, canvas.height*0.02)}px 'Inter', sans-serif`;
+                    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+                    ctx.fillText(`SISTEMA DI VIDEOSORVEGLIANZA${loc ? ' - '+loc.toUpperCase() : ''}`, 15, canvas.height - 15);
+                    ctx.fillStyle = 'rgba(20,20,20,0.8)';
+                    ctx.font = `10px sans-serif`;
+                    ctx.textAlign = 'right';
+                    ctx.fillText("GENERATO DA BASTAASCOLTARE CCTV LAB 1.0.1" + (wm ? " - "+wm : ""), canvas.width - 5, canvas.height - 5);
+
+                    // 5. Glitches
+                    if (UI.gChroma.checked && Math.random() < 0.1) {
+                        ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 0.5; ctx.drawImage(canvas, 3, 0);
+                        ctx.globalAlpha = 1.0; ctx.globalCompositeOperation = 'source-over';
+                    }
+                    if (UI.gTrack.checked && Math.random() < 0.08) {
+                        const yG = Math.random() * (canvas.height - 20), hG = 5 + Math.random() * 20;
+                        const sG = (Math.random() > 0.5 ? 1 : -1) * (10 + Math.random()*30);
+                        ctx.putImageData(ctx.getImageData(0, yG, canvas.width, hG), sG, yG);
+                    }
+                    if (UI.gNoise.checked) {
+                        if (currentFrame % 2 === 0) updateNoise();
+                        ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = 0.15;
+                        for(let nx=0; nx<canvas.width; nx+=300) for(let ny=0; ny<canvas.height; ny+=300) ctx.drawImage(noiseCanvas, nx, ny);
+                        ctx.globalAlpha = 1.0; ctx.globalCompositeOperation = 'source-over';
+                    }
+
+                    // 6. Saint Gilles
+                    if (sgConfig && currentFrame >= sgConfig.startF && currentFrame < (sgConfig.startF + sgConfig.durF)) {
+                        if (currentFrame >= sgConfig.nextJumpF) {
+                            let step = sgConfig.intervalF;
+                            if (sgConfig.randomTime) step = (0.5 + Math.random() * 9.5) * fps;
+                            sgConfig.nextJumpF = currentFrame + step;
+                            if (sgConfig.randomPos) {
+                                sgConfig.x = Math.random() * (canvas.width - 250); sgConfig.y = Math.random() * (canvas.height - 150);
+                            } else {
+                                sgConfig.x = canvas.width/2 - 125; sgConfig.y = canvas.height/2 - 75;
+                            }
+                        }
+                        const isBlinkOn = !sgConfig.blink || (currentFrame % (Math.floor(fps * 0.55)*2) < Math.floor(fps*0.55));
+                        ctx.save();
+                        const sgW = Math.min(280, canvas.width * 0.4);
+                        const sgH = Math.min(140, canvas.height * 0.3);
+                        const sx = Math.max(0, Math.min(canvas.width - sgW, sgConfig.x));
+                        const sy = Math.max(0, Math.min(canvas.height - sgH, sgConfig.y));
+                        ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.fillRect(sx, sy, sgW, sgH);
+                        ctx.strokeStyle = '#33FF33'; ctx.lineWidth = 1; ctx.strokeRect(sx, sy, sgW, sgH);
+                        ctx.fillStyle = '#e0e0e0'; ctx.fillRect(sx, sy, sgW, 15);
+                        ctx.fillStyle = '#33FF33'; ctx.font = `bold 12px 'Courier Prime', monospace`;
+                        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                        const lines = sgConfig.text.split('\n');
+                        let ty = sy + 25;
+                        for (let l of lines) { ctx.fillText(l, sx + 10, ty); ty += 16; }
+                        if (isBlinkOn) ctx.fillText(">_", sx + 10, ty);
+                        ctx.restore();
+                    }
+                    
+                    // Scanlines
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    for(let sy=0; sy<canvas.height; sy+=3) ctx.fillRect(0, sy, canvas.width, 1);
+
+                    currentFrame++;
+                    UI.progressFill.style.width = Math.floor((currentFrame / totalFrames) * 100) + '%';
+                }
+                animationFrameId = requestAnimationFrame(renderLoop);
+            }
+            animationFrameId = requestAnimationFrame(renderLoop);
+        }
+
+        function exportVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `Basta_Ascoltare_CCTV_${new Date().getTime().toString().slice(-6)}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+            resetUI();
+            UI.statusText.textContent = "Video salvato! (Controlla i Download)";
+        }
+
+        function resetUI() {
+            isRecording = false;
+            UI.btnCreate.classList.remove('hidden');
+            UI.btnCancel.classList.add('hidden');
+            for (let m of mediaFiles) {
+                if (m && m.el) { if (m.type === 'video') m.el.pause(); m.el.src = ''; }
+            }
+            mediaPool.innerHTML = '';
+        }
+
+        UI.btnCreate.addEventListener('click', startCreation);
+        UI.btnCancel.addEventListener('click', () => {
+            if (isRecording && confirm("Annullare l'esportazione in corso?")) {
+                isCancelled = true;
+                resetUI();
+                UI.progressFill.style.width = '0%';
+                UI.statusText.textContent = "Operazione annullata.";
+            }
+        });
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrato con successo.', reg))
+                    .catch(err => console.error('Errore registrazione Service Worker:', err));
+            });
+        }
+    </script>
+</body>
+</html>
